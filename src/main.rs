@@ -290,14 +290,6 @@ fn render_all(tcod: &mut Tcod, game: &mut Game, objects: &Vec<Character>, fov_re
 
             tcod.con.set_char_background(x, y, color, BackgroundFlag::Set);
 
-
- //           if wall{
- //               tcod.con.set_char_background(x, y, COLOR_DARK_WALL, BackgroundFlag::Set);
- //           }
- //           else{
- //               tcod.con.set_char_background(x, y, COLOR_DARK_GROUND, BackgroundFlag::Set);
- //           }
-
             tcod.fov.set(
                 x,
                 y,
