@@ -38,6 +38,7 @@ const LIMIT_FPS: i32 = 20;
 struct Tile{
     blocked: bool,
     block_sight: bool,
+    explored: bool,
 }
 
 impl Tile{
@@ -45,6 +46,7 @@ impl Tile{
         Tile{
             blocked: false,
             block_sight: false,
+            explored: false,
         }
     }
 
@@ -52,6 +54,7 @@ impl Tile{
         Tile{
             blocked: true,
             block_sight: true,
+            explored: false,
         }
     }
 }
@@ -206,7 +209,7 @@ fn main() {
     
     let mut objects = vec![player, enemy];
 
-    let game = Game { map: map };
+    let mut game = Game { map: map };
 
     let mut previous_player_pos = (-1, -1);
 
@@ -217,7 +220,7 @@ fn main() {
         let player = &mut objects[0];
 
         let fov_recompute = previous_player_pos != (player.x, player.y);
-        render_all(&mut tcod, &game, &clone_obj, fov_recompute);
+        render_all(&mut tcod, &mut game, &clone_obj, fov_recompute);
 
         tcod.root.flush();
         tcod.root.wait_for_keypress(true);
@@ -262,7 +265,7 @@ fn make_map() -> Map{
     map
 }
 
-fn render_all(tcod: &mut Tcod, game: &Game, objects: &Vec<Character>, fov_recompute: bool){
+fn render_all(tcod: &mut Tcod, game: &mut Game, objects: &Vec<Character>, fov_recompute: bool){
    if fov_recompute{
         let player = objects[0];
         tcod.fov.compute_fov(player.x, player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALGO);
@@ -272,7 +275,12 @@ fn render_all(tcod: &mut Tcod, game: &Game, objects: &Vec<Character>, fov_recomp
         for x in 0..(MAP_WIDTH){
             let wall = game.map[(x) as usize][(y) as usize].block_sight;
             let visible = tcod.fov.is_in_fov(x, y);
-            let color = match (visible, wall){
+            let explored = &mut game.map[(x) as usize][(y) as usize].explored;
+            
+            if visible{
+                *explored = true;
+            }
+            let color = match (visible || *explored, wall){
                 (false, true) => COLOR_DARK_WALL,
                 (false, false) => COLOR_DARK_GROUND,
 
@@ -300,7 +308,7 @@ fn render_all(tcod: &mut Tcod, game: &Game, objects: &Vec<Character>, fov_recomp
     }
 
     for object in objects{
-        if tcod.fov.is_in_fov(object.x, object.y){
+        if tcod.fov.is_in_fov(object.x, object.y) || game.map[(object.x) as usize][(object.y) as usize].explored{
             object.draw(&mut tcod.con);
         }
     }
