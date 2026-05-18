@@ -147,17 +147,6 @@ fn main() {
 
 
     let mut map = make_map();
-    /*
-    let room1 = Rect::new(20, 15, 10, 15);
-    let room2 = Rect::new(50, 15, 10, 15);
-    let room3 = Rect::new(35, 0, 10, 15);
-
-    create_room(room1, &mut map);
-    create_room(room2, &mut map);
-    create_room(room3, &mut map);
-    create_h_tunnel(30, 50, 23, &mut map);
-    create_v_tunnel(23, 15, 40, &mut map);
-    */
 
     let mut rooms: Vec<Rect> = vec![];
 
