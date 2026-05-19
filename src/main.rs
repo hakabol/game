@@ -1,3 +1,4 @@
+use tcod::colors;
 use tcod::colors::*;
 use tcod::console::*;
 use tcod::input::{Key, KeyCode::*};
@@ -27,11 +28,13 @@ const ROOM_MAX_SIZE: i32 = 10;
 const ROOM_MIN_SIZE: i32 = 6;
 const MAX_ROOMS: i32 = 30;
 
+const MAX_ROOM_MONSTERS: i32 = 3;
+
 const FOV_ALGO: FovAlgorithm = FovAlgorithm::Basic;
 const FOV_LIGHT_WALLS: bool = true;
 const TORCH_RADIUS: i32 = 10;
 
-const LIMIT_FPS: i32 = 20;
+const LIMIT_FPS: i32 = 50;
 
 #[derive(Clone, Copy, Debug)]
 
@@ -155,8 +158,8 @@ fn main() {
 
     tcod::system::set_fps(LIMIT_FPS);
 
-    let mut player = Character::new(25, 23, '@', WHITE);
-    let mut enemy = Character::new(10, 10, '#', WHITE);
+    let mut objects: Vec<Character> = vec![];
+
 
     let mut map = make_map();
 
@@ -179,15 +182,12 @@ fn main() {
             let (new_x, new_y) = room.center();
 
             if rooms.is_empty(){
-                player.x = new_x;
-                player.y = new_y;
+                let player = Character::new(new_x, new_y, '@', colors::WHITE);
+                objects.push(player);
             }
             
             else {
-                if rooms.len() == 3{
-                    enemy.x = new_x;
-                    enemy.y = new_y;
-                }
+                place_objects(room, &mut objects);
                 let (prev_x, prev_y) = rooms[rooms.len() - 1].center();
 
                 if rand::rng().random(){
@@ -207,7 +207,6 @@ fn main() {
 
     }
     
-    let mut objects = vec![player, enemy];
 
     let mut game = Game { map: map };
 
@@ -334,5 +333,25 @@ fn create_h_tunnel(x1: i32, x2: i32, y: i32, map: &mut Map){
 fn create_v_tunnel(y1: i32, y2: i32, x: i32, map: &mut Map){
     for y in cmp::min(y1, y2)..=cmp::max(y1, y2){
         map[x as usize][y as usize] = Tile::empty();
+    }
+}
+
+fn place_objects(room: Rect, objects: &mut Vec<Character>){
+    let num_of_monsters = rand::rng().random_range(0..=MAX_ROOM_MONSTERS);
+
+    for _ in 0..num_of_monsters{
+        let x = rand::rng().random_range((room.x1 + 1)..room.x2);
+        let y = rand::rng().random_range((room.y1 + 1)..room.y2);
+
+        let chances: f32 = rand::rng().random();
+
+        let monster = if chances < 0.8 {
+            Character::new(x, y, 'O', colors::DESATURATED_GREEN)
+        }
+        else{
+            Character::new(x, y, 'T', colors::DARKER_GREEN)
+        };
+
+        objects.push(monster);
     }
 }
