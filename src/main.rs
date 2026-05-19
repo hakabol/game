@@ -34,6 +34,8 @@ const FOV_ALGO: FovAlgorithm = FovAlgorithm::Basic;
 const FOV_LIGHT_WALLS: bool = true;
 const TORCH_RADIUS: i32 = 10;
 
+const PLAYER: usize = 0;
+
 const LIMIT_FPS: i32 = 50;
 
 #[derive(Clone, Copy, Debug)]
@@ -70,24 +72,27 @@ struct Game{
 
 #[derive(Debug)]
 
-#[derive(PartialEq, Clone, Copy)]
+#[derive(PartialEq, Clone)]
 struct Character{
     x: i32,
     y: i32,
     char: char,
     color: Color,
+    name: String,
+    blocks: bool,
+    alive: bool,
 }
 
 impl Character{
-    fn new(x: i32, y: i32, char: char, color: Color) -> Self{
-        Character {x, y, char, color}
+    fn new(x: i32, y: i32, char: char, color: Color, name: &str, blocks: bool) -> Self{
+        Character {x, y, char, color, name: name.into(), blocks, alive: false}
     }
 
     fn move_by(&mut self, dx: i32, dy: i32, game: &Game, objects: &Vec<Character>){
         let mut check = true;
         for object in objects{
             if object != self{
-                if self.x + dx == object.x && self.y + dy == object.y{
+                if self.x + dx == object.x && self.y + dy == object.y && object.blocks{
                     check = false;
                 }
             }
@@ -101,6 +106,15 @@ impl Character{
     fn draw(&self, con: &mut dyn Console){
         con.set_default_foreground(self.color);
         con.put_char(self.x, self.y, self.char, BackgroundFlag::None);
+    }
+
+    fn pos(&self) -> (i32, i32){
+        (self.x, self.y)
+    }
+    
+    fn set_pos(&mut self, x: i32, y: i32){
+        self.x = x;
+        self.y = y;
     }
 }
 
@@ -182,7 +196,7 @@ fn main() {
             let (new_x, new_y) = room.center();
 
             if rooms.is_empty(){
-                let player = Character::new(new_x, new_y, '@', colors::WHITE);
+                let player = Character::new(new_x, new_y, '@', colors::WHITE, "player", true);
                 objects.push(player);
             }
             
@@ -216,7 +230,7 @@ fn main() {
         tcod.con.clear();
 
         let clone_obj = objects.clone();
-        let player = &mut objects[0];
+        let player = &mut objects[PLAYER];
 
         let fov_recompute = previous_player_pos != (player.x, player.y);
         render_all(&mut tcod, &mut game, &clone_obj, fov_recompute);
@@ -266,7 +280,7 @@ fn make_map() -> Map{
 
 fn render_all(tcod: &mut Tcod, game: &mut Game, objects: &Vec<Character>, fov_recompute: bool){
    if fov_recompute{
-        let player = objects[0];
+        let player = &objects[PLAYER];
         tcod.fov.compute_fov(player.x, player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALGO);
     } 
 
@@ -346,10 +360,10 @@ fn place_objects(room: Rect, objects: &mut Vec<Character>){
         let chances: f32 = rand::rng().random();
 
         let monster = if chances < 0.8 {
-            Character::new(x, y, 'O', colors::DESATURATED_GREEN)
+            Character::new(x, y, 'O', colors::DESATURATED_GREEN, "orc", true)
         }
         else{
-            Character::new(x, y, 'T', colors::DARKER_GREEN)
+            Character::new(x, y, 'T', colors::DARKER_AMBER, "idk", true)
         };
 
         objects.push(monster);
